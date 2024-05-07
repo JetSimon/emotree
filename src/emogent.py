@@ -11,8 +11,14 @@ class Emogent():
     def __init__(self, emojis, shape=(512, 512, 4)):
         self.emojis = emojis
         self.shape = shape
+        self.image = None
+        self.cached_image = False
 
     def get_image(self):
+
+        if self.cached_image:
+            return self.image
+
         index = 0
         image = np.zeros(self.shape)
         h, w, c = self.shape
@@ -22,7 +28,11 @@ class Emogent():
                 th, tw, tc = chunk.shape
                 image[y:y+EMOJI_SIZE, x:x+EMOJI_SIZE, :] = emojis.get_emoji_np(self.emojis[index], size=(EMOJI_SIZE, EMOJI_SIZE))[:th, :tw, :tc]
                 index += 1
-        return image / 255
+        
+        self.cached_image = True
+        self.image = image / 255
+
+        return self.image
 
     def show(self):
         plt.imshow(self.get_image())
