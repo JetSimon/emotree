@@ -5,6 +5,7 @@ import cv2
 import os
 import math
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 emojis.preload()
 
@@ -30,21 +31,35 @@ def score_patch(im1, im2):
 
     return score
 
-for y in tqdm(range(0, h, EMOJI_SIZE // OVERLAP)):
-    for x in tqdm(range(0, w, EMOJI_SIZE // OVERLAP)):
-        chunk = image[y:y+EMOJI_SIZE, x:x+EMOJI_SIZE, :]
-        best_chunk = None
-        best_score = math.inf
-        th, tw, tc = chunk.shape
-        for emoji in emojis.emoji_images:
-            emoji_chunk = emoji[:th, :tw, :tc]
-            score = score_patch(emoji_chunk, chunk)
+def task(y, x, image):
+    chunk = image[y:y+EMOJI_SIZE, x:x+EMOJI_SIZE, :]
+    best_chunk = None
+    best_score = math.inf
+    th, tw, tc = chunk.shape
+    for emoji in emojis.emoji_images:
+        emoji_chunk = emoji[:th, :tw, :tc]
+        score = score_patch(emoji_chunk, chunk)
 
-            if best_score > score:
-                best_score = score
-                best_chunk = chunk
-        
-        image[y:y+EMOJI_SIZE, x:x+EMOJI_SIZE, :] = best_chunk
+        if best_score > score:
+            best_score = score
+            best_chunk = chunk
+    
+    image[y:y+EMOJI_SIZE, x:x+EMOJI_SIZE, :] = best_chunk
+
+coords = []
+
+for y in range(0, h, EMOJI_SIZE // OVERLAP):
+    for x in range(0, w, EMOJI_SIZE // OVERLAP):
+        coords.append((y,x))
+
+print("Done adding coords")
+
+with tqdm(total=len(coords)) as pbar:
+    with ThreadPoolExecutor(max_workers=len(coords)) as ex:
+        futures = [ex.submit(task, y, x, image) for y,x in coords]
+        for future in as_completed(futures):
+            result = future.result()
+            pbar.update(1)
 
 plt.imshow(image)
 plt.show() 
