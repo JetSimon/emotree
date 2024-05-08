@@ -81,6 +81,14 @@ while(True):
 
         image[y:y+th, x:x+tw, :3] = emoji_images[Y[i]][:th, :tw, :3]
 
+    h,w,c = frame.shape
+    h = h // 4
+    w = w //4
+
+    frame = cv2.resize(frame, (w,h))
+
+    image[:h,:w,:3] = frame
+
     # Display the resulting frame 
     cv2.imshow('frame', image) 
     
