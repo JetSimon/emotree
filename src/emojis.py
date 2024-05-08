@@ -6,11 +6,11 @@ emojis = os.listdir(EMOJI_PATH)
 
 already_read_np = {}
 
-emoji_images = []
-
-def preload():
+def preload(size=(16,16)):
+    emoji_images = []
     for i in range(len(emojis)):
-        emoji_images.append(get_emoji_np(i, size=(16,16)))
+        emoji_images.append(get_emoji_np(i, size))
+    return emoji_images
 
 def get_random_emoji_index():
     return randint(0, len(emojis) - 1)
